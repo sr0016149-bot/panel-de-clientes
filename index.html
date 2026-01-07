@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Control de Vencimientos</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px }
+h1 { text-align:center }
+input { margin:20px 0 }
+table { width:100%; border-collapse:collapse; background:#fff }
+th, td { padding:10px; border:1px solid #ccc; text-align:center }
+th { background:#222; color:#fff }
+.vencido { background:#ffb3b3 }
+.porvencer { background:#fff3b0 }
+.activo { background:#b7f7c1 }
+</style>
+</head>
+
+<body>
+
+<h1>📅 Vencimientos de Clientes</h1>
+
+<input type="file" id="excel" accept=".xlsx,.xls">
+
+<table>
+<thead>
+<tr>
+<th>Cliente</th>
+<th>Servicio</th>
+<th>Vencimiento</th>
+<th>Precio</th>
+<th>Ganancia</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+
+<script>
+document.getElementById('excel').addEventListener('change', function(e) {
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(e.target.files[0]);
+
+    reader.onload = function() {
+        const data = new Uint8Array(reader.result);
+        const workbook = XLSX.read(data, {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        const tbody = document.getElementById('tabla');
+        tbody.innerHTML = "";
+
+        const hoy = new Date();
+
+        rows.forEach(r => {
+            if (!r.Vencimiento) return;
+
+            const v = new Date(r.Vencimiento);
+            const dias = Math.ceil((v - hoy) / (1000*60*60*24));
+
+            let estado = "ACTIVO", clase="activo";
+            if (dias < 0) { estado="VENCIDO"; clase="vencido"; }
+            else if (dias <= 3) { estado="POR VENCER"; clase="porvencer"; }
+
+            const tr = document.createElement('tr');
+            tr.className = clase;
+            tr.innerHTML = `
+                <td>${r.Nombre}</td>
+                <td>${r.Servicio}</td>
+                <td>${r.Vencimiento}</td>
+                <td>${r.Precio || ""}</td>
+                <td>${r.Ganancia || ""}</td>
+                <td>${estado}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+});
+</script>
+
+</body>
+</html>
