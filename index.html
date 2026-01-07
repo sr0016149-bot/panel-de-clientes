@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Vencimientos de Clientes</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+}
+input {
+    margin: 20px 0;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+th {
+    background: #222;
+    color: #fff;
+}
+.vencido {
+    background-color: #ffb3b3;
+}
+.por-vencer {
+    background-color: #fff3b0;
+}
+.ok {
+    background-color: #b7f7c1;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📅 Control de Vencimientos</h1>
+
+<input type="file" id="excelFile" accept=".xlsx,.xls">
+
+<table id="tabla">
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Teléfono</th>
+<th>Servicio</th>
+<th>Vencimiento</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+document.getElementById('excelFile').addEventListener('change', function(e) {
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(e.target.files[0]);
+
+    reader.onload = function() {
+        const data = new Uint8Array(reader.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        const tbody = document.querySelector('#tabla tbody');
+        tbody.innerHTML = "";
+
+        const hoy = new Date();
+
+        rows.forEach(row => {
+            const vencimiento = new Date(row.Vencimiento);
+            const diferencia = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+
+            let estado = "";
+            let clase = "";
+
+            if (diferencia < 0) {
+                estado = "VENCIDO";
+                clase = "vencido";
+            } else if (diferencia <= 3) {
+                estado = "POR VENCER";
+                clase = "por-vencer";
+            } else {
+                estado = "ACTIVO";
+                clase = "ok";
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = clase;
+            tr.innerHTML = `
+                <td>${row.Nombre}</td>
+                <td>${row.Telefono}</td>
+                <td>${row.Servicio}</td>
+                <td>${row.Vencimiento}</td>
+                <td>${estado}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+});
+</script>
+
+</body>
+</html>
